@@ -7,14 +7,14 @@ Credit Minder is a Flutter application designed to help users manage their credi
 <table>
   <tr>
     <td><img src="/preview/mobile_preview_1.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
-    <td><img src="/preview/mobile_preview_2.jpg" alt="Credit Minder App Screenshot" width="600" height="400"></td>
-    <td><img src="/preview/mobile_preview_3.jpg" alt="Credit Minder App Screenshot" width="600" height="400"></td>
+    <td><img src="/preview/mobile_preview_2.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+    <td><img src="/preview/mobile_preview_3.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
   </tr>
     <tr>
-    <td colspan="3"><img src="/preview/web_preview_1.png" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+    <td colspan="3"><img src="/preview/web_preview_1.png" alt="Credit Minder App Screenshot" width="600" height="400"></td>
   </tr>
   <tr>
-    <td colspan="3"><img src="/preview/web_preview_2.png" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+    <td colspan="3"><img src="/preview/web_preview_2.png" alt="Credit Minder App Screenshot" width="600" height="400"></td>
   </tr>
   <tr>
 
