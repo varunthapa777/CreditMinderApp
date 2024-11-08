@@ -2,6 +2,16 @@
 
 Credit Minder is a Flutter application designed to help users manage their credits and debts. The app allows users to add, view, and manage their financial records. It supports user authentication and provides a seamless experience across web and Android platforms.
 
+## Project Preview
+
+<table>
+  <tr>
+    <td><img src="/preview/mobile_preview_1.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+    <td><img src="/preview/mobile_preview_2.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+    <td><img src="/preview/mobile_preview_3.jpg" alt="Credit Minder App Screenshot" width="300" height="600"></td>
+  </tr>
+</table>
+
 ## Hosted Web App
 
 The Credit Minder web app is hosted on Vultr server instance. You can access it at the following link:
