@@ -8,6 +8,12 @@ The Credit Minder web app is hosted on Vultr server instance. You can access it 
 
 [Credit Minder Web App](http://139.84.169.208)
 
+## Checkout server Repo
+
+You can find the server repository at the following link:
+
+[Credit Minder Server Repository](https://github.com/varunthapa777/CreditMinderServer)
+
 ## Features
 
 - User Authentication (Login and Registration)
