@@ -9,7 +9,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool? hasSeenIntro = prefs.getBool('hasSeenIntro') ?? false;
-  print(hasSeenIntro);
   runApp(MyApp(
     hasSeenIntro: hasSeenIntro,
   ));

@@ -1,9 +1,14 @@
+import 'package:credit_minder_app/components/add_record_button.dart';
+import 'package:credit_minder_app/components/my_drawer.dart';
 import 'package:credit_minder_app/components/my_textfield.dart';
 import 'package:credit_minder_app/components/record_tile.dart';
 import 'package:credit_minder_app/service/auth_service.dart';
 import 'package:credit_minder_app/service/record_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+
+import 'auth_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   AuthService authService = AuthService();
   RecordService recordService = RecordService();
   String? _userName;
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +49,7 @@ class _HomePageState extends State<HomePage> {
 
   var userRecord = <Map<String, dynamic>>[];
 
-  void addRecord(BuildContext context) {
+  void addNewRecord(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -62,6 +68,8 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 20),
                 MyTextfield(
                   icon: Icons.call,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   controller: mobileController,
                   obscureText: false,
                   hintText: "Mobile Number",
@@ -69,6 +77,8 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 20),
                 MyTextfield(
                   icon: Icons.monetization_on,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   controller: amountController,
                   obscureText: false,
                   hintText: "Amount",
@@ -78,13 +88,199 @@ class _HomePageState extends State<HomePage> {
                   controller: _dateController,
                   decoration: const InputDecoration(
                     icon: Icon(Icons.calendar_today),
-                    labelText: 'Select Date',
+                    labelText: 'Due Date',
                   ),
                   readOnly: true,
                   onTap: () {
                     showDatePicker(
                       context: context,
                       initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2100),
+                    ).then((value) {
+                      if (value != null) {
+                        _dateController.text =
+                            "${value.year}-${value.month}-${value.day}";
+                      }
+                    });
+                  },
+                )
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  nameController.clear();
+                  amountController.clear();
+                  mobileController.clear();
+                  _dateController.clear();
+                },
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final userId = await authService.getUserId();
+                  if (mobileController.text.length != 10) {
+                    Fluttertoast.showToast(
+                      msg: "Mobile number is invalid",
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                    );
+                    return;
+                  }
+                  if (amountController.text.isEmpty) {
+                    Fluttertoast.showToast(
+                      msg: "Add Amount",
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.BOTTOM,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                    );
+                    return;
+                  }
+                  await recordService.addRecord(
+                      userId!,
+                      nameController.text,
+                      amountController.text,
+                      false,
+                      _dateController.text,
+                      mobileController.text);
+                  setState(() {
+                    fetchRecords();
+                    // Clear the text fields after adding the record
+                    nameController.clear();
+                    amountController.clear();
+                    mobileController.clear();
+                    _dateController.clear();
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text("Add"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void settleAndEditRecord(
+      BuildContext context, Map<String, dynamic> record, dueDateReached) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.amber,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  showUpdateUserDialog(context, record);
+                },
+                icon: Icon(Icons.edit),
+                label: const Text("Edit Record"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  showSettleRecordDialog(context, record);
+                },
+                icon: Icon(Icons.check),
+                label: const Text("Settle Amount"),
+              ),
+              dueDateReached
+                  ? const SizedBox(height: 10)
+                  : const SizedBox.shrink(),
+              dueDateReached
+                  ? ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {},
+                      icon: const Icon(Icons.alarm),
+                      label: const Text("Send Remind"))
+                  : const SizedBox.shrink(),
+              record['settled']
+                  ? const SizedBox(height: 10)
+                  : const SizedBox.shrink(),
+              record['settled']
+                  ? ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () async {
+                        await recordService.deleteRecord(record["recordId"]!);
+                        setState(() {
+                          fetchRecords();
+                        });
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.delete),
+                      label: const Text("Delete Record"),
+                    )
+                  : const SizedBox.shrink(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void showUpdateUserDialog(BuildContext context, Map<String, dynamic> record) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Update User"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MyTextfield(
+                  icon: Icons.person,
+                  controller: nameController..text = record['name'],
+                  obscureText: false,
+                  hintText: "Name",
+                ),
+                const SizedBox(height: 20),
+                MyTextfield(
+                  icon: Icons.call,
+                  controller: mobileController..text = record['phoneNumber'],
+                  obscureText: false,
+                  hintText: "Mobile Number",
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _dateController
+                    ..text = DateTime.parse(record['dueDate'])
+                        .toIso8601String()
+                        .split('T')[0],
+                  decoration: const InputDecoration(
+                    icon: Icon(Icons.calendar_today),
+                    labelText: 'Due Date',
+                  ),
+                  readOnly: true,
+                  onTap: () {
+                    showDatePicker(
+                      context: context,
+                      initialDate: DateTime.parse(record['dueDate']),
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
                     ).then((value) {
@@ -107,13 +303,11 @@ class _HomePageState extends State<HomePage> {
               TextButton(
                 onPressed: () async {
                   final userId = await authService.getUserId();
-                  await recordService.addRecord(
-                    userId!,
-                    nameController.text,
-                    amountController.text,
-                    false,
-                    _dateController.text,
-                  );
+                  await recordService.updateRecord(
+                      record["recordId"]!,
+                      nameController.text,
+                      _dateController.text,
+                      mobileController.text);
                   setState(() {
                     fetchRecords();
                     // Clear the text fields after adding the record
@@ -124,10 +318,83 @@ class _HomePageState extends State<HomePage> {
                   });
                   Navigator.pop(context);
                 },
-                child: const Text("Add"),
+                child: const Text("Update"),
+              ),
+            ],
+          );
+        });
+  }
+
+  void showSettleRecordDialog(
+      BuildContext context, Map<String, dynamic> record) {
+    TextEditingController amountPaidController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Settle Record"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Amount Due: ${record['amount']}"),
+              const SizedBox(height: 20),
+              MyTextfield(
+                icon: Icons.attach_money,
+                controller: TextEditingController(text: record['amount']),
+                obscureText: false,
+                hintText: "Amount Due",
+                readOnly: true,
+              ),
+              const SizedBox(height: 20),
+              MyTextfield(
+                icon: Icons.money,
+                controller: amountPaidController,
+                obscureText: false,
+                hintText: "Amount Paid",
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final amountPaid = double.parse(amountPaidController.text);
+                final remainingAmount =
+                    double.parse(record['amount']) - amountPaid;
+                if (remainingAmount < 0) {
+                  Fluttertoast.showToast(
+                    msg: "Amount paid cannot be more than amount due",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                  );
+                  return;
+                }
+                await recordService.updateRecordAmount(
+                  record["recordId"]!,
+                  remainingAmount.toString(),
+                  remainingAmount <= 0,
+                );
+
+                setState(() {
+                  fetchRecords();
+                });
+
+                Navigator.pop(context);
+              },
+              child: const Text("Settle"),
+            ),
+          ],
         );
       },
     );
@@ -135,204 +402,224 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
     return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        drawer: Drawer(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+        length: 3,
+        child: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              elevation: 5,
+              centerTitle: true,
+              title: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  DrawerHeader(
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
+                  Icon(
+                    Icons.monetization_on,
+                    color: Colors.green,
+                    size: 30,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Credit Minder",
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          const CircleAvatar(
-                            radius: 40,
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.black,
-                              size: 50,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _userName ?? "User",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.home),
-                    title: const Text('Home'),
-                    onTap: () {
-                      // Update the state of the app
-                      // ...
-                      // Then close the drawer
-                      Navigator.pop(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.settings),
-                    title: const Text('Settings'),
-                    onTap: () {
-                      // Update the state of the app
-                      // ...
-                      // Then close the drawer
-                      Navigator.pop(context);
-                    },
-                  ),
+                  )
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 25.0),
-                child: ListTile(
-                  leading: Icon(Icons.logout),
-                  title: const Text('Logout'),
-                  onTap: () async {
-                    await authService.logUserOut();
-                    Navigator.pushNamed(context, '/auth');
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        appBar: AppBar(
-          centerTitle: true,
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.monetization_on, color: Colors.green, size: 30),
-              SizedBox(width: 10),
-              Text(
-                'Credit Minder',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: IconButton(
-                onPressed: () {
-                  Fluttertoast.showToast(
-                    msg: "Notifications coming soon",
-                    toastLength: Toast.LENGTH_SHORT,
-                    gravity: ToastGravity.BOTTOM,
-                    timeInSecForIosWeb: 1,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    textColor: Theme.of(context).colorScheme.inversePrimary,
-                  );
-                },
-                icon: const Icon(
-                  Icons.notifications,
+              actions: [
+                if (!isPortrait)
+                  IconButton(
+                      padding: const EdgeInsets.only(right: 20),
+                      onPressed: () => addNewRecord(context),
+                      icon:
+                          const Icon(Icons.add, color: Colors.green, size: 30)),
+                IconButton(
+                  padding: const EdgeInsets.only(right: 20),
+                  icon: const Icon(Icons.notifications,
+                      color: Colors.green, size: 30),
                   color: Colors.green,
-                ),
-                hoverColor: Colors.black,
-                iconSize: 30,
-              ),
+                  onPressed: () {},
+                )
+              ],
             ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              MyTextfield(
-                  icon: Icons.search,
-                  controller: searchBoxController,
-                  obscureText: false,
-                  hintText: "Search using name or email"),
-              const SizedBox(height: 20),
-              TabBar(
-                unselectedLabelColor: Theme.of(context).colorScheme.primary,
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelPadding: const EdgeInsets.symmetric(vertical: 10),
-                indicator: BoxDecoration(
-                  color: Colors.green.shade400,
-                ),
-                dividerColor: Colors.transparent,
-                labelColor: Theme.of(context).colorScheme.inversePrimary,
-                indicatorColor: Theme.of(context).colorScheme.secondary,
-                labelStyle: const TextStyle(fontSize: 20),
-                tabs: const [
-                  Tab(
-                    text: "Recievables",
-                  ),
-                  Tab(
-                    text: "Payables",
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => addRecord(context),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  color: Theme.of(context).colorScheme.secondary,
-                  child: const Center(
-                    child: Row(
-                      children: [
-                        Icon(Icons.add, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text("Add New Record",
-                            style:
-                                TextStyle(color: Colors.green, fontSize: 20)),
-                      ],
+            drawer: MyDrawer(
+              userName: _userName,
+            ),
+            body: Column(
+              children: [
+                if (isPortrait)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 20.0, horizontal: 20),
+                    child: AddRecordButton(
+                      onTap: () => addNewRecord(context),
                     ),
                   ),
+                TabBar(
+                  tabs: const [
+                    Tab(
+                      text: "All Records",
+                    ),
+                    Tab(
+                      text: "Settled",
+                    ),
+                    Tab(
+                      text: "Overdue",
+                    )
+                  ],
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: const BoxDecoration(
+                    color: Colors.green,
+                  ),
+                  dividerColor: Theme.of(context).colorScheme.secondary,
+                  labelColor: Colors.white,
+                  indicatorColor: Colors.transparent,
                 ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: TabBarView(
-                    physics: const NeverScrollableScrollPhysics(),
+                Expanded(
+                  child: TabBarView(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      RefreshIndicator(
+                        onRefresh: fetchRecords,
                         child: ListView.builder(
                           itemCount: userRecord.length,
                           itemBuilder: (context, index) {
-                            final name = userRecord[index]["name"] as String;
+                            final name = userRecord[index]['name'] as String;
                             final amount =
-                                userRecord[index]["amount"] as String;
+                                userRecord[index]['amount'] as String;
                             final settled =
-                                userRecord[index]["settled"] as bool;
+                                userRecord[index]['settled'] as bool;
+                            final dueDate =
+                                DateTime.parse(userRecord[index]['due_date'])
+                                    .toIso8601String()
+                                    .split('T')[0];
+                            final phoneNumber =
+                                userRecord[index]['phone_number'] as String;
+                            final recordId = userRecord[index]['id'] as int;
+
+                            final dueDateReached = DateTime.parse(dueDate)
+                                    .isBefore(DateTime.now()) &&
+                                !settled;
                             return RecordTile(
-                                name: name, amount: amount, settled: settled);
+                              name: name,
+                              amount: amount,
+                              settled: settled,
+                              dueDateReached: dueDateReached,
+                              onPressed: () {
+                                settleAndEditRecord(
+                                    context,
+                                    {
+                                      'name': name,
+                                      'amount': amount,
+                                      'settled': settled,
+                                      'dueDate': dueDate,
+                                      'phoneNumber': phoneNumber,
+                                      'recordId': recordId,
+                                    },
+                                    dueDateReached);
+                              },
+                            );
                           },
                         ),
                       ),
-                      const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Center(
-                            child: Text(
-                              "Payables\nComing Soon",
-                              textAlign: TextAlign.center,
-                            ),
-                          )),
-                    ]),
-              ),
-            ],
+                      RefreshIndicator(
+                        onRefresh: fetchRecords,
+                        child: ListView.builder(
+                          itemCount: userRecord.length,
+                          itemBuilder: (context, index) {
+                            if (userRecord[index]['settled']) {
+                              final name = userRecord[index]['name'] as String;
+                              final amount =
+                                  userRecord[index]['amount'] as String;
+                              final settled =
+                                  userRecord[index]['settled'] as bool;
+                              final dueDate =
+                                  DateTime.parse(userRecord[index]['due_date']);
+                              final phoneNumber =
+                                  userRecord[index]['phone_number'] as String;
+                              final recordId = userRecord[index]['id'] as int;
+                              return RecordTile(
+                                settled: true,
+                                name: name,
+                                amount: amount,
+                                dueDateReached: false,
+                                onPressed: () {
+                                  settleAndEditRecord(
+                                      context,
+                                      {
+                                        'name': name,
+                                        'amount': amount,
+                                        'settled': true,
+                                        'dueDate':
+                                            "${dueDate.year}-${dueDate.month}-${dueDate.day}",
+                                        'phoneNumber': phoneNumber,
+                                        'recordId': recordId,
+                                      },
+                                      false);
+                                },
+                              );
+                            } else {
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        ),
+                      ),
+                      RefreshIndicator(
+                        onRefresh: fetchRecords,
+                        child: ListView.builder(
+                          itemCount: userRecord.length,
+                          itemBuilder: (context, index) {
+                            final dueDate =
+                                DateTime.parse(userRecord[index]['due_date']);
+                            final currentDate = DateTime.now();
+                            if (dueDate.isBefore(currentDate) &&
+                                !userRecord[index]['settled']) {
+                              final name = userRecord[index]['name'] as String;
+                              final amount =
+                                  userRecord[index]['amount'] as String;
+                              final settled =
+                                  userRecord[index]['settled'] as bool;
+                              final phoneNumber =
+                                  userRecord[index]['phone_number'] as String;
+                              final recordId = userRecord[index]['id'] as int;
+
+                              return RecordTile(
+                                name: name,
+                                amount: amount,
+                                dueDateReached: true,
+                                settled: false,
+                                onPressed: () {
+                                  settleAndEditRecord(
+                                      context,
+                                      {
+                                        'name': name,
+                                        'amount': amount,
+                                        'settled': settled,
+                                        'dueDate':
+                                            "${dueDate.year}-${dueDate.month}-${dueDate.day}",
+                                        'phoneNumber': phoneNumber,
+                                        'recordId': recordId,
+                                      },
+                                      true);
+                                },
+                              );
+                            } else {
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

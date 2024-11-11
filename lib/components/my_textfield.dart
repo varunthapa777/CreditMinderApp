@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class MyTextfield extends StatelessWidget {
   final IconData? icon;
   final TextEditingController controller;
   final bool obscureText;
   final String hintText;
+  final bool? readOnly;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   const MyTextfield({
     super.key,
     required this.controller,
     required this.obscureText,
     required this.hintText,
     this.icon,
+    this.readOnly,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
@@ -40,6 +47,9 @@ class MyTextfield extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
       ),
+      readOnly: readOnly ?? false,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
     );
   }
 }

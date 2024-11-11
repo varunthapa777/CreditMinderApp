@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   Future<bool> logUserIn(String email, String password) async {
-    final url = kIsWeb ? '/api/login' : 'http://139.84.167.74/login';
+    final url = 'http://139.84.167.74/login';
     print(email);
     print(password);
     print("login...");
