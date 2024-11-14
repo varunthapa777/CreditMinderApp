@@ -16,7 +16,8 @@ class MyDrawer extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            height: isPortrait ? 200 : 150,
+            padding: const EdgeInsets.only(top: 20),
+            height: isPortrait ? 250 : 200,
             width: double.infinity,
             color: Colors.green,
             child: Column(
@@ -32,9 +33,25 @@ class MyDrawer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  userName ?? "User",
-                  style: const TextStyle(fontSize: 20, color: Colors.white),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(width: 40),
+                    Text(
+                      userName ?? "User",
+                      style: const TextStyle(fontSize: 20, color: Colors.white),
+                    ),
+                    IconButton(
+                      padding: const EdgeInsets.all(0),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/profile');
+                      },
+                      icon: Icon(Icons.edit),
+                      color: Colors.white,
+                      iconSize: 20,
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -4,6 +4,7 @@ import 'package:credit_minder_app/components/sqaure_tile.dart';
 import 'package:credit_minder_app/service/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart';
 
 class LoginPage extends StatelessWidget {
   final Function()? toggleLoginRegister;
@@ -18,8 +19,17 @@ class LoginPage extends StatelessWidget {
     final email = emailController.text;
     final password = passwordController.text;
 
-    final success = await authService.logUserIn(email, password);
-    if (success) {
+    final response = await authService.logUserIn(email, password);
+    if (response.success) {
+      Fluttertoast.showToast(
+        msg: "Login successful",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        textColor: Theme.of(context).colorScheme.inversePrimary,
+      );
+
       Navigator.pushNamed(context, '/home');
     } else {
       // Handle login failure

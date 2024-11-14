@@ -21,12 +21,14 @@ class DrawerItem extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           icon,
-          color: iconColor ?? Colors.black,
+          color: iconColor ?? Theme.of(context).colorScheme.inversePrimary,
           size: 30,
         ),
         title: Text(
           title,
-          style: TextStyle(color: titleColor ?? Colors.black),
+          style: TextStyle(
+              color:
+                  titleColor ?? Theme.of(context).colorScheme.inversePrimary),
         ),
         onTap: onTap,
       ),

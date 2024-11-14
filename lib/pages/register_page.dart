@@ -3,6 +3,7 @@ import 'package:credit_minder_app/components/my_textfield.dart';
 import 'package:credit_minder_app/components/sqaure_tile.dart';
 import 'package:credit_minder_app/service/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class RegisterPage extends StatelessWidget {
@@ -14,7 +15,7 @@ class RegisterPage extends StatelessWidget {
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController nameController = TextEditingController();
-  AuthService auth = AuthService();
+  AuthService authService = AuthService();
 
   void registerUser() async {
     final email = emailController.text;
@@ -24,24 +25,39 @@ class RegisterPage extends StatelessWidget {
 
     if (password != confirmPassword) {
       // Handle password mismatch
-      print('Passwords do not match');
+      Fluttertoast.showToast(
+          msg: "Passwords do not match",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
       return;
     }
 
-    try {
-      // Register user
-      await auth.registerUser(name, email, password);
-      toggleLoginRegister!();
-    } catch (e) {
-      // Handle registration failure
+    final response = await authService.registerUser(name, email, password);
+
+    if (response.success) {
+      // Navigate to the next page or show success message
       Fluttertoast.showToast(
-        msg: "failed to register",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.white,
-        textColor: Colors.black,
-      );
+          msg: response.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    } else {
+      // Show error message
+      Fluttertoast.showToast(
+          msg: response.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
     }
   }
 
@@ -82,6 +98,9 @@ class RegisterPage extends StatelessWidget {
                   MyTextfield(
                     controller: nameController,
                     hintText: "Full Name",
+                    inputFormatters: [
+                      FilteringTextInputFormatter.singleLineFormatter
+                    ],
                     obscureText: false,
                   ),
                   const SizedBox(height: 15),
@@ -89,6 +108,10 @@ class RegisterPage extends StatelessWidget {
                   MyTextfield(
                     controller: emailController,
                     hintText: "Email",
+                    keyboardType: TextInputType.emailAddress,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.singleLineFormatter
+                    ],
                     obscureText: false,
                   ),
                   const SizedBox(height: 15),
@@ -96,6 +119,9 @@ class RegisterPage extends StatelessWidget {
                   // password input
                   MyTextfield(
                     controller: passwordController,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.singleLineFormatter
+                    ],
                     hintText: "Password",
                     obscureText: true,
                   ),
@@ -104,6 +130,9 @@ class RegisterPage extends StatelessWidget {
                   // password input
                   MyTextfield(
                     controller: confirmPasswordController,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.singleLineFormatter
+                    ],
                     hintText: "Confirm password",
                     obscureText: true,
                   ),

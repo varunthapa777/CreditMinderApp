@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/auth_page.dart';
 import 'pages/home_page.dart';
 import 'pages/intro_page.dart';
+import 'pages/profile_page.dart';
 import 'theme/light_mode.dart';
 
 void main() async {
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/home': (_) => HomePage(),
           '/auth': (_) => AuthPage(),
+          '/profile': (_) => ProfilePage(),
         });
   }
 }
